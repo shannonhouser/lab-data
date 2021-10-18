@@ -1,0 +1,67 @@
+---
+title: "Game of Thrones Survival Analysis"
+author: "Shannon Houser"
+date: "9/27/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+library(tidyverse)
+library(survival)
+library(survminer)
+```
+
+```{r data}
+got <- read_csv("210927_got.csv")
+
+got2 <- got %>% 
+  select(duration_in_episodes, is_dead, character_name, royal, house, gender)
+```
+
+```{r}
+ggsurvplot(survfit(Surv(duration_in_episodes, is_dead) ~ 1, data = got2),
+           xlab = "Number of Episodes", 
+           ylab = "Estimated Survival Probability", 
+           conf.int = F)
+```
+
+```{r}
+ggsurvplot(survfit(Surv(duration_in_episodes, is_dead) ~ gender, data = got2),
+           xlab = "Number of Episodes", 
+           ylab = "Estimated Survival Probability", 
+           conf.int = F,
+           legend.labs = c("Female", "Male"))
+```
+
+```{r}
+ggsurvplot(survfit(Surv(duration_in_episodes, is_dead) ~ royal, data = got2),
+           xlab = "Number of Episodes", 
+           ylab = "Estimated Survival Probability", 
+           conf.int = F,
+           legend.labs = c("Not Royal", "Royal"))
+```
+
+```{r}
+ggsurvplot(survfit(Surv(duration_in_episodes, is_dead) ~ house, 
+                   data = got2),
+           xlab = "Number of Episodes", 
+           ylab = "Estimated Survival Probability", 
+           conf.int = F)
+```
+
+```{r}
+survdiff(Surv(duration_in_episodes, is_dead) ~ gender, 
+                   data = got2)
+
+survdiff(Surv(duration_in_episodes, is_dead) ~ royal, 
+                   data = got2)
+
+survdiff(Surv(duration_in_episodes, is_dead) ~ house, 
+                   data = got2)
+```
+
+It appears that gender and house have a differential survival, but not royalty. We can see that females have a smaller probability of being killed than males. We can also see that although the probability of dying is not statistically significant between royals and non-royals, we can see that the plots are very different. It seems that when royals die, they die in groups, whereas non-royals die much more sporadically. This might make sense considering royals would probably only die when another group infiltrated their castle/kingdom or during war or other events where many royals would die together. Lastly, house seems to have an effect on survival. This probably has confounding factors because those in the same house are most often together in location and have common enemies, so they are more likely to be killed together. Furthermore, many of the characters did not have a house assigned, so we are completing this analysis on less than 100 characters. 

@@ -1,0 +1,75 @@
+---
+title: "Reproducing Class Example"
+author: "Shannon Houser"
+date: "10/15/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(MASS)
+```
+
+
+```{r}
+ddh <- read_csv("ddh.csv")
+```
+
+```{r}
+# make categorical twa variable
+ddh <- ddh %>% 
+  mutate(factor_glutwa = case_when(
+    glutwa < 141.8 ~ "<142",
+    glutwa < 172.1 ~ "142-172",
+    glutwa < 209.4 ~ "172-209",
+    TRUE ~ ">209"
+  ))
+
+ddh %>% 
+  count(factor_glutwa)
+
+# used weird numbers as cutoffs but got the right number in each group?
+```
+
+```{r}
+ddh %>% 
+  group_by(factor_glutwa) %>% 
+  summarise(med = round(median(r_bmi), 0),
+            q1 = round(quantile(r_bmi, .25), 0),
+            q3 = round(quantile(r_bmi, .75), 0))
+```
+
+```{r}
+ddh %>% 
+  ggplot(aes(y = glutwa, x = factor(delayed_fn), group = delayed_fn)) +
+  stat_boxplot(geom ='errorbar', coef = 4) +
+  geom_boxplot(coef = 4) +
+  scale_y_continuous(trans = "log10",
+                     limits = c(50,500),
+                     labels = c(50, "", "", "", "", 100, 200, 300, 400, 500),
+                     breaks = c(50, 60, 70, 80, 90, 100, 200, 300, 400, 500)) + 
+  scale_x_discrete(labels = c("IGF", "LGD")) +
+  theme_minimal() +
+  labs(x = "TWA",
+       y = NULL)
+  
+# boxplot without log scale and with outliers still
+```
+
+```{r}
+unadjusted <- glm(delayed_fn ~ glutwa, data = ddh, family = "binomial")
+adjusted <- glm(delayed_fn ~ glutwa + r_age + d_cod + hemo_instability, data = ddh, family = "binomial")
+
+summary(unadjusted)
+summary(adjusted)
+exp(cbind(coef(unadjusted), confint(unadjusted)))  
+exp(cbind(coef(adjusted), confint(adjusted)))
+
+# Got different p-values and odds ratios
+# Not sure how to account for the odds ratios being for a relatice doubling of twa glucose
+```
+
